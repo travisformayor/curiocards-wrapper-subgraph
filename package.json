@@ -1,0 +1,16 @@
+{
+  "name": "curio-cards-wrapper-api",
+  "license": "UNLICENSED",
+  "scripts": {
+    "codegen": "graph codegen",
+    "build": "graph build",
+    "deploy": "graph deploy --node https://api.studio.thegraph.com/deploy/ curio-cards-wrapper-api",
+    "create-local": "graph create --node http://localhost:8020/ curio-cards-wrapper-api",
+    "remove-local": "graph remove --node http://localhost:8020/ curio-cards-wrapper-api",
+    "deploy-local": "graph deploy --node http://localhost:8020/ --ipfs http://localhost:5001 curio-cards-wrapper-api"
+  },
+  "dependencies": {
+    "@graphprotocol/graph-cli": "0.26.0",
+    "@graphprotocol/graph-ts": "0.24.1"
+  }
+}
