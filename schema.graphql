@@ -1,6 +1,18 @@
-type ExampleEntity @entity {
+type Card @entity {
   id: ID!
-  count: BigInt!
-  previousOwner: Bytes! # address
-  newOwner: Bytes! # address
+  metadataIPFS: String!
+  wrappedBalance: BigInt! # total number of these cards that are currently wrapped
+  holders: [HolderCardBalance]! @derivedFrom(field: "holder")
+}
+
+type Holder @entity {
+  id: ID! # address
+  cards: [HolderCardBalance!] @derivedFrom(field: "card")
+}
+
+type HolderCardBalance @entity {
+  "mapping table for many-to-many relationship"
+  id: ID!   # Set to `${holder.id}-${card.id}`
+  holder: Holder!
+  card: Card!
 }
