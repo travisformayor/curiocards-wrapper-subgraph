@@ -19,6 +19,7 @@ Unlike with erc721, erc1155 nfts can have multiple print holders. This creates a
 - Holder
     - ethereum address
     - list of cards owned
+        - Can be null if transferred away all previously owned cards
 - HolderCardBalance
     - Many-to-many relationship mapping table
         - CardID can have many owners
