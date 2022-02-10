@@ -17,7 +17,7 @@ export class Card extends Entity {
     this.set("id", Value.fromString(id));
 
     this.set("metadataIPFS", Value.fromString(""));
-    this.set("wrappedBalance", Value.fromBigInt(BigInt.zero()));
+    this.set("wrappedBalance", Value.fromI32(0));
   }
 
   save(): void {
@@ -55,13 +55,13 @@ export class Card extends Entity {
     this.set("metadataIPFS", Value.fromString(value));
   }
 
-  get wrappedBalance(): BigInt {
+  get wrappedBalance(): i32 {
     let value = this.get("wrappedBalance");
-    return value!.toBigInt();
+    return value!.toI32();
   }
 
-  set wrappedBalance(value: BigInt) {
-    this.set("wrappedBalance", Value.fromBigInt(value));
+  set wrappedBalance(value: i32) {
+    this.set("wrappedBalance", Value.fromI32(value));
   }
 
   get holders(): Array<string> {
@@ -131,7 +131,7 @@ export class HolderCardBalance extends Entity {
 
     this.set("holder", Value.fromString(""));
     this.set("card", Value.fromString(""));
-    this.set("balance", Value.fromBigInt(BigInt.zero()));
+    this.set("balance", Value.fromI32(0));
   }
 
   save(): void {
@@ -180,12 +180,12 @@ export class HolderCardBalance extends Entity {
     this.set("card", Value.fromString(value));
   }
 
-  get balance(): BigInt {
+  get balance(): i32 {
     let value = this.get("balance");
-    return value!.toBigInt();
+    return value!.toI32();
   }
 
-  set balance(value: BigInt) {
-    this.set("balance", Value.fromBigInt(value));
+  set balance(value: i32) {
+    this.set("balance", Value.fromI32(value));
   }
 }

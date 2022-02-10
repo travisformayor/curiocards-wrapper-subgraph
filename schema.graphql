@@ -1,7 +1,7 @@
 type Card @entity {
   id: ID!
   metadataIPFS: String!
-  wrappedBalance: BigInt! # amount currently wrapped
+  wrappedBalance: Int! # amount currently wrapped
   holders: [HolderCardBalance!]! @derivedFrom(field: "card")
 }
 
@@ -15,5 +15,5 @@ type HolderCardBalance @entity {
   id: ID! # Set to `${holder.id}-${card.id}`
   holder: Holder!
   card: Card!
-  balance: BigInt!
+  balance: Int!
 }

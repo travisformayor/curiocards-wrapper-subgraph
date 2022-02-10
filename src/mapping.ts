@@ -1,4 +1,4 @@
-import { Address } from "@graphprotocol/graph-ts";
+import { Address, BigInt } from "@graphprotocol/graph-ts";
 
 // Import helpers for interacting with smart contract
 import {
@@ -15,9 +15,9 @@ import {
 export function handleTransferSingle (event: TransferSingleEvent): void {
   // event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
   // Collect event information
-  const operator: Address = event.params._operator; // addr that executed transfer
-  const sentFrom: Address = event.params._from;
-  const sentTo: Address = event.params._to;
+  const operator: string = event.params._operator.toHexString(); // addr that executed transfer
+  const sentFrom: string = event.params._from.toHexString();
+  const sentTo: string = event.params._to.toHexString();
   const cardId: number = event.params._id.toI32();
   const quantity: number = event.params._value.toI32();
 
@@ -43,20 +43,28 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   const burnAddr: string = "0x0000000000000000000000000000000000000000";
   const contractAddr: string = "0x73DA73EF3a6982109c4d5BDb0dB9dd3E3783f313";
 
+  // WrapperContract object used to access read-only state
+  const wrapContract: WrapperContract = WrapperContract.bind(event.address);
+
   if (quantity == 0) {
-    // Create
+    // Create, or empty send. Ignore
   }
-  else if (operator.toHex() == sentTo.toHex() && sentFrom.toHex() == burnAddr) {
-    // Wrap
+  else if (operator == sentTo && sentFrom == burnAddr) {
+    // Wrap. Update sentTo balance
+    updateBalance(sentTo, cardId, wrapContract);
   }
-  else if (sentFrom.toHex() == contractAddr && sentTo.toHex() == burnAddr) {
-    // Unwrap
+  else if (sentFrom == contractAddr && sentTo == burnAddr) {
+    // Unwrap. Update operator balance
+    updateBalance(operator, cardId, wrapContract);
   }
-  else if (operator.toHex() == sentFrom.toHex() && sentFrom.toHex() != sentTo.toHex()) {
-    // Single Transfer
+  else if (operator == sentFrom && sentFrom != sentTo) {
+    // Single Transfer. Update sentFrom and sentTo balance
+    updateBalance(sentFrom, cardId, wrapContract);
+    updateBalance(sentTo, cardId, wrapContract);
   }
   else {
-    // Unknown
+    // Unknown transaction type
+    //  To Do: Return debug error log
   }
 
 }
@@ -64,4 +72,26 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
 export function handleTransferBatch (event: TransferBatchEvent): void {
   //event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
 
+}
+
+function updateBalance (holderId: string, cardId: number, wrapContract: WrapperContract): void {
+  // Load/Create user
+  let holder: Holder = Holder.load(holderId);
+  if (!holder) {
+    holder = new Holder(holderId);
+    holder.save();
+  }
+
+  // Load/Create relationship between that user and card
+  const relationshipId: string = `${holder.id.toString()}-${cardId.toString()}`;
+
+  let holderCardInfo: HolderCardBalance = HolderCardBalance.load(relationshipId);
+  if (!holderCardInfo) {
+    holderCardInfo = new HolderCardBalance(relationshipId);
+    holderCardInfo.holder = holderId;
+    holderCardInfo.card = cardId.toString();
+  }
+  // Fetch current user balance from the contract state
+  holderCardInfo.balance = wrapContract.balanceOf(Address.fromString(holderId), BigInt.fromI32(cardId)).toI32();
+  holderCardInfo.save();
 }
