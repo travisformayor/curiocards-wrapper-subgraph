@@ -1,5 +1,5 @@
 type Card @entity {
-  id: ID!
+  id: ID! # To Do: confirm this is being set to the token Id
   metadataIPFS: String!
   wrappedBalance: Int! # amount currently wrapped
   holders: [HolderCardBalance!]! @derivedFrom(field: "card")
