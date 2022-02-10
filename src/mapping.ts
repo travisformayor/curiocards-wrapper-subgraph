@@ -89,7 +89,23 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
 
 export function handleTransferBatch (event: TransferBatchEvent): void {
   //event: TransferBatch(indexed address,indexed address,indexed address,uint256[],uint256[])
+  // This event is only called by safeBatchTransferFrom
 
+  // WrapperContract object used to access read-only state
+  const wrapContract: WrapperContract = WrapperContract.bind(event.address);
+
+  // Collect event information
+  const sentFrom: string = event.params._from.toHexString();
+  const sentTo: string = event.params._to.toHexString();
+  const cardIds: number[] = event.params._ids.map(x => x.toI32());
+  // const quantities: number[] = event.params._values.map(x => x.toI32());
+
+  // Loop the cards and update the holder's balance for each
+  for (let i = 0; i < cardIds.length; i++) {
+    // Update sentFrom and sentTo balance
+    updateBalance(sentFrom, cardIds[i], wrapContract);
+    updateBalance(sentTo, cardIds[i], wrapContract);
+  }
 }
 
 // == Helper Functions == //
