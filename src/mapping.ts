@@ -1,4 +1,4 @@
-import { Address, BigInt } from "@graphprotocol/graph-ts";
+import { Address, BigInt, log } from "@graphprotocol/graph-ts";
 
 // Import helpers for interacting with smart contract
 import {
@@ -62,15 +62,17 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
     // Card's create event or an empty send. No balance change, ignore.
   }
   else if (operator == sentTo && sentFrom == burnAddr) {
-    // Wrap. Update sentTo balance and Card's wrapped supply
+    // Wrap. Update sentTo balance
     updateBalance(sentTo, cardId, wrapContract);
+    // Update Card's wrapped supply
     let card: Card = Card.load(cardId.toString());
     card.wrappedBalance += quantity;
     card.save();
   }
   else if (sentFrom == contractAddr && sentTo == burnAddr) {
-    // Unwrap. Update operator balance and Card's wrapped supply
+    // Unwrap. Update operator (holder) balance
     updateBalance(operator, cardId, wrapContract);
+    // Update Card's wrapped supply
     let card: Card = Card.load(cardId.toString());
     card.wrappedBalance -= quantity;
     card.save();
@@ -82,7 +84,12 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   }
   else {
     // Unknown transaction type
-    //  To Do: Return debug error log
+    log.info('Unknown Transaction Type.', []);
+    log.info('- operator: {} ', [operator]);
+    log.info('- sentFrom: {} ', [sentFrom]);
+    log.info('- sentTo: {} ', [sentTo]);
+    log.info('- cardId: {} ', [cardId.toString()]);
+    log.info('- quantity: {} ', [quantity.toString()]);
   }
 
 }
