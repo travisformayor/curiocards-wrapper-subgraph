@@ -35,8 +35,8 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   const operator: string = event.params._operator.toHexString(); // addr that executed transfer
   const sentFrom: string = event.params._from.toHexString();
   const sentTo: string = event.params._to.toHexString();
-  const cardId: number = event.params._id.toI32();
-  const quantity: number = event.params._value.toI32();
+  const cardId: i32 = event.params._id.toI32();
+  const quantity: i32 = event.params._value.toI32();
 
   // == What kind of transfer event is this? ==
   // Create: (emits TransferSingle w/quantity 0 to let explorers know token exists)
@@ -104,19 +104,19 @@ export function handleTransferBatch (event: TransferBatchEvent): void {
   // Collect event information
   const sentFrom: string = event.params._from.toHexString();
   const sentTo: string = event.params._to.toHexString();
-  const cardIds: number[] = event.params._ids.map(x => x.toI32());
-  // const quantities: number[] = event.params._values.map(x => x.toI32());
+  const cardIds: BigInt[] = event.params._ids;
+  // const quantities: i32[] = event.params._values.map(x => x.toI32());
 
   // Loop the cards and update the holder's balance for each
   for (let i = 0; i < cardIds.length; i++) {
     // Update sentFrom and sentTo balance
-    updateBalance(sentFrom, cardIds[i], wrapContract);
-    updateBalance(sentTo, cardIds[i], wrapContract);
+    updateBalance(sentFrom, cardIds[i].toI32(), wrapContract);
+    updateBalance(sentTo, cardIds[i].toI32(), wrapContract);
   }
 }
 
 // == Helper Functions == //
-function updateBalance (holderId: string, cardId: number, wrapContract: WrapperContract): void {
+function updateBalance (holderId: string, cardId: i32, wrapContract: WrapperContract): void {
   // Load/Create user
   let holder: Holder = Holder.load(holderId);
   if (!holder) {
