@@ -4,7 +4,8 @@ import { Address, BigInt } from "@graphprotocol/graph-ts";
 import {
   CurioERC1155Wrapper as WrapperContract,
   TransferSingle as TransferSingleEvent,
-  TransferBatch as TransferBatchEvent
+  TransferBatch as TransferBatchEvent,
+  URI as URIEvent
 } from "../generated/CurioERC1155Wrapper/CurioERC1155Wrapper";
 
 // Import helpers for interacting with indexer node
@@ -12,8 +13,24 @@ import {
   Card, Holder, HolderCardBalance
 } from "../generated/schema";
 
+export function handleURI (event: URIEvent): void {
+  // event: URI(string,indexed uint256)
+  // Only called once per card at contract creation
+  // Create new card entity
+  let card: Card = new Card(event.params._id.toString());
+  card.metadataIPFS = event.params._value;
+  card.wrappedBalance = 0;
+  card.save();
+}
+
 export function handleTransferSingle (event: TransferSingleEvent): void {
   // event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
+  const burnAddr: string = "0x0000000000000000000000000000000000000000";
+  const contractAddr: string = "0x73DA73EF3a6982109c4d5BDb0dB9dd3E3783f313";
+
+  // WrapperContract object used to access read-only state
+  const wrapContract: WrapperContract = WrapperContract.bind(event.address);
+
   // Collect event information
   const operator: string = event.params._operator.toHexString(); // addr that executed transfer
   const sentFrom: string = event.params._from.toHexString();
@@ -40,22 +57,23 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   // safeBatchTransferFrom: 
   //   This function is the only one that emits the TransferBatchEvent
   //   Ignore, this can be handled separately in handleTransferBatch()
-  const burnAddr: string = "0x0000000000000000000000000000000000000000";
-  const contractAddr: string = "0x73DA73EF3a6982109c4d5BDb0dB9dd3E3783f313";
-
-  // WrapperContract object used to access read-only state
-  const wrapContract: WrapperContract = WrapperContract.bind(event.address);
 
   if (quantity == 0) {
-    // Create, or empty send. Ignore
+    // Card's create event or an empty send. No balance change, ignore.
   }
   else if (operator == sentTo && sentFrom == burnAddr) {
-    // Wrap. Update sentTo balance
+    // Wrap. Update sentTo balance and Card's wrapped supply
     updateBalance(sentTo, cardId, wrapContract);
+    let card: Card = Card.load(cardId.toString());
+    card.wrappedBalance += quantity;
+    card.save();
   }
   else if (sentFrom == contractAddr && sentTo == burnAddr) {
-    // Unwrap. Update operator balance
+    // Unwrap. Update operator balance and Card's wrapped supply
     updateBalance(operator, cardId, wrapContract);
+    let card: Card = Card.load(cardId.toString());
+    card.wrappedBalance -= quantity;
+    card.save();
   }
   else if (operator == sentFrom && sentFrom != sentTo) {
     // Single Transfer. Update sentFrom and sentTo balance
@@ -74,6 +92,7 @@ export function handleTransferBatch (event: TransferBatchEvent): void {
 
 }
 
+// == Helper Functions == //
 function updateBalance (holderId: string, cardId: number, wrapContract: WrapperContract): void {
   // Load/Create user
   let holder: Holder = Holder.load(holderId);
