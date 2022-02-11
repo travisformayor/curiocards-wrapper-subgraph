@@ -88,14 +88,8 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   }
   else {
     // Unknown transaction type
-    log.info('Unknown Transaction Type.', []);
-    log.info('- operator: {} ', [operator]);
-    log.info('- sentFrom: {} ', [sentFrom]);
-    log.info('- sentTo: {} ', [sentTo]);
-    log.info('- cardId: {} ', [cardId.toString()]);
-    log.info('- quantity: {} ', [quantity.toString()]);
+    log.warning('Unknown Transaction Type. TransactionId: {}', [event.transaction.hash.toHexString()]);
   }
-
 }
 
 export function handleTransferBatch (event: TransferBatchEvent): void {
