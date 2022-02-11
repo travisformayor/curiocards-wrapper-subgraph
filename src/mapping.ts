@@ -60,12 +60,15 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   //   This function is the only one that emits the TransferBatchEvent
   //   Ignore in if...else, handle separately in handleTransferBatch()
 
-  if (quantity == 0 && operator == contractDeployer && event.block.number.toI32() == 12129118) {
+  if (quantity == 0 && operator == contractDeployer && event.block.number == new BigInt(12129118)) {
     // Create when contract was deployed, to initialize token for explorers. 0 cards sent.
+    log.info('Create Event for Card {}', [cardId.toString()]);
   }
   else if (quantity == 0 || cardId < 1 || cardId > 30) {
     // Empty or invalid send. No balance change, so ignore. Log for confirmation
     log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
+    log.info('Debug Info: quantity: {}, op: {}, deployer: {}, block: {}',
+      [quantity.toString(), operator, contractDeployer, event.block.number.toString()]);
   }
   else if (operator == sentTo && sentFrom == burnAddr) {
     // Wrap. Update sentTo balance
