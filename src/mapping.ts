@@ -53,12 +53,12 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   //   _from = Contract
   //   _to = Burn Address (0x0)
   // safeTransferFrom:
-  //   _operator = holder. same as _from
+  //   _operator = holder (same as _from) or smart contract
   //   _from = holder
   //   _to = different holder
   // safeBatchTransferFrom: 
   //   This function is the only one that emits the TransferBatchEvent
-  //   Ignore, this can be handled separately in handleTransferBatch()
+  //   Ignore in if...else, handle separately in handleTransferBatch()
 
   if (quantity == 0 && operator == contractDeployer && event.block.number.toI32() == 12129118) {
     // Create when contract was deployed, to initialize token for explorers. 0 cards sent.
@@ -87,21 +87,19 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
       card.save();
     }
   }
-  else if (operator == sentFrom && sentFrom != sentTo) {
-    // Single direct Transfer. Update sentFrom and sentTo balances
-    updateBalance(sentFrom, cardId, wrapContract);
-    updateBalance(sentTo, cardId, wrapContract);
+  else if (operator == sentFrom && sentFrom == sentTo) {
+    // Holder sent cards to themselves. No change, ignore
   }
   else if (sentFrom != sentTo) {
-    // Smart contract managed single Transfer (different operator from card holder)
-    // Update sentFrom and sentTo balances
+    // If operator != sentFrom, transfer was managed by a smart contract.
+    // If operator == sentFrom, transfer was holder initiated.
+    // Either way, card transfer. Update sentFrom and sentTo balances.
     updateBalance(sentFrom, cardId, wrapContract);
     updateBalance(sentTo, cardId, wrapContract);
-
   }
   else {
-    // Unknown transaction type
-    log.warning('Unknown Transaction Type. TransactionId: {}', [event.transaction.hash.toHexString()]);
+    // Unhandled transaction type
+    log.warning('Unhandled Transaction Type. TransactionId: {}', [event.transaction.hash.toHexString()]);
   }
 }
 
@@ -113,16 +111,33 @@ export function handleTransferBatch (event: TransferBatchEvent): void {
   const wrapContract: WrapperContract = WrapperContract.bind(event.address);
 
   // Collect event information
+  const operator: string = event.params._operator.toHexString();
   const sentFrom: string = event.params._from.toHexString();
   const sentTo: string = event.params._to.toHexString();
   const cardIds: BigInt[] = event.params._ids;
-  // const quantities: i32[] = event.params._values.map(x => x.toI32());
+  const quantities: BigInt[] = event.params._values;
 
   // Loop the cards and update the holder's balance for each
   for (let i = 0; i < cardIds.length; i++) {
-    // Update sentFrom and sentTo balance
-    updateBalance(sentFrom, cardIds[i].toI32(), wrapContract);
-    updateBalance(sentTo, cardIds[i].toI32(), wrapContract);
+    // Check for expected transaction types
+    if (quantities[i].toI32() == 0 || cardIds[i].toI32() < 1 || cardIds[i].toI32() > 30) {
+      // Empty or invalid send. No balance change, so ignore. Log for confirmation
+      log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
+    }
+    else if (operator == sentFrom && sentFrom == sentTo) {
+      // Holder sent cards to themselves. No change, ignore
+    }
+    else if (sentFrom != sentTo) {
+      // If operator != sentFrom, transfer was managed by a smart contract.
+      // If operator == sentFrom, transfer was holder initiated.
+      // Either way, card transfer. Update sentFrom and sentTo balances.
+      updateBalance(sentFrom, cardIds[i].toI32(), wrapContract);
+      updateBalance(sentTo, cardIds[i].toI32(), wrapContract);
+    }
+    else {
+      // Unhandled transaction type
+      log.warning('Unhandled Transaction Type. TransactionId: {}', [event.transaction.hash.toHexString()]);
+    }
   }
 }
 
