@@ -65,17 +65,21 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
     // Wrap. Update sentTo balance
     updateBalance(sentTo, cardId, wrapContract);
     // Update Card's wrapped supply
-    let card: Card = Card.load(cardId.toString());
-    card.wrappedBalance += quantity;
-    card.save();
+    let card = Card.load(cardId.toString());
+    if (card) {
+      card.wrappedBalance += quantity;
+      card.save();
+    }
   }
   else if (sentFrom == contractAddr && sentTo == burnAddr) {
     // Unwrap. Update operator (holder) balance
     updateBalance(operator, cardId, wrapContract);
     // Update Card's wrapped supply
-    let card: Card = Card.load(cardId.toString());
-    card.wrappedBalance -= quantity;
-    card.save();
+    let card = Card.load(cardId.toString());
+    if (card) {
+      card.wrappedBalance -= quantity;
+      card.save();
+    }
   }
   else if (operator == sentFrom && sentFrom != sentTo) {
     // Single Transfer. Update sentFrom and sentTo balance
@@ -118,7 +122,7 @@ export function handleTransferBatch (event: TransferBatchEvent): void {
 // == Helper Functions == //
 function updateBalance (holderId: string, cardId: i32, wrapContract: WrapperContract): void {
   // Load/Create user
-  let holder: Holder = Holder.load(holderId);
+  let holder = Holder.load(holderId);
   if (!holder) {
     holder = new Holder(holderId);
     holder.save();
@@ -127,7 +131,7 @@ function updateBalance (holderId: string, cardId: i32, wrapContract: WrapperCont
   // Load/Create relationship between that user and card
   const relationshipId: string = `${holder.id.toString()}-${cardId.toString()}`;
 
-  let holderCardInfo: HolderCardBalance = HolderCardBalance.load(relationshipId);
+  let holderCardInfo = HolderCardBalance.load(relationshipId);
   if (!holderCardInfo) {
     holderCardInfo = new HolderCardBalance(relationshipId);
     holderCardInfo.holder = holderId;
