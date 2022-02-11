@@ -1,0 +1,19 @@
+type Card @entity {
+  id: ID! # To Do: confirm this is being set to the token Id
+  metadataIPFS: String!
+  wrappedBalance: Int! # amount currently wrapped
+  holders: [HolderCardBalance!]! @derivedFrom(field: "card")
+}
+
+type Holder @entity {
+  id: ID! # address
+  cards: [HolderCardBalance!] @derivedFrom(field: "holder")
+}
+
+type HolderCardBalance @entity {
+  "mapping table for many-to-many relationship"
+  id: ID! # Set to `${holder.id}-${card.id}`
+  holder: Holder!
+  card: Card!
+  balance: Int!
+}
