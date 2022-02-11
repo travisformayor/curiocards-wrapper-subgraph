@@ -21,6 +21,7 @@ export function handleURI (event: URIEvent): void {
   card.metadataIPFS = event.params._value;
   card.wrappedBalance = 0;
   card.save();
+  log.info('Card entity created: ID {}, IPFS {}', [card.id, card.metadataIPFS]);
 }
 
 export function handleTransferSingle (event: TransferSingleEvent): void {
@@ -58,8 +59,9 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   //   This function is the only one that emits the TransferBatchEvent
   //   Ignore, this can be handled separately in handleTransferBatch()
 
-  if (quantity == 0) {
-    // Card's create event or an empty send. No balance change, ignore.
+  if (quantity == 0 || cardId < 1 || cardId > 30) {
+    // Empty or invalid send. No balance change, so ignore. Log for confirmation
+    log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
   }
   else if (operator == sentTo && sentFrom == burnAddr) {
     // Wrap. Update sentTo balance
@@ -82,9 +84,16 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
     }
   }
   else if (operator == sentFrom && sentFrom != sentTo) {
-    // Single Transfer. Update sentFrom and sentTo balance
+    // Single direct Transfer. Update sentFrom and sentTo balances
     updateBalance(sentFrom, cardId, wrapContract);
     updateBalance(sentTo, cardId, wrapContract);
+  }
+  else if (sentFrom != sentTo) {
+    // Smart contract managed single Transfer (different operator from card holder)
+    // Update sentFrom and sentTo balances
+    updateBalance(sentFrom, cardId, wrapContract);
+    updateBalance(sentTo, cardId, wrapContract);
+
   }
   else {
     // Unknown transaction type
