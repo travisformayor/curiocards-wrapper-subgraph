@@ -28,6 +28,7 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   // event: TransferSingle(indexed address,indexed address,indexed address,uint256,uint256)
   const burnAddr: string = "0x0000000000000000000000000000000000000000";
   const contractAddr: string = "0x73DA73EF3a6982109c4d5BDb0dB9dd3E3783f313";
+  const contractDeployer: string = "0x53f46BFBEcB075B4feb3BcE6828b9095e630d371";
 
   // WrapperContract object used to access read-only state
   const wrapContract: WrapperContract = WrapperContract.bind(event.address);
@@ -59,7 +60,10 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   //   This function is the only one that emits the TransferBatchEvent
   //   Ignore, this can be handled separately in handleTransferBatch()
 
-  if (quantity == 0 || cardId < 1 || cardId > 30) {
+  if (quantity == 0 && operator == contractDeployer && event.block.number.toI32() == 12129118) {
+    // Create when contract was deployed, to initialize token for explorers. 0 cards sent.
+  }
+  else if (quantity == 0 || cardId < 1 || cardId > 30) {
     // Empty or invalid send. No balance change, so ignore. Log for confirmation
     log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
   }
