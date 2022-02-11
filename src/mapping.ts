@@ -18,10 +18,10 @@ export function handleURI (event: URIEvent): void {
   // Only called once per card at contract creation
   // Create new card entity
   let card: Card = new Card(event.params._id.toString());
-  card.metadataIPFS = event.params._value;
+  card.metadataIPFS = event.params._value.toString();
   card.wrappedBalance = 0;
   card.save();
-  log.info('Card entity created: ID {}, IPFS {}', [card.id, card.metadataIPFS]);
+  log.info('Log: Card entity created: ID {}, IPFS {}', [card.id, card.metadataIPFS]);
 }
 
 export function handleTransferSingle (event: TransferSingleEvent): void {
@@ -29,6 +29,8 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   const burnAddr: string = "0x0000000000000000000000000000000000000000";
   const contractAddr: string = "0x73DA73EF3a6982109c4d5BDb0dB9dd3E3783f313";
   const contractDeployer: string = "0x53f46BFBEcB075B4feb3BcE6828b9095e630d371";
+  const contractDeployer_1: string = '0x53f46BFBEcB075B4feb3BcE6828b9095e630d371';
+  const contractDeployer_2: string = "0x53f46BFBEcB075B4feb3BcE6828b9095e630d371".toString();
 
   // WrapperContract object used to access read-only state
   const wrapContract: WrapperContract = WrapperContract.bind(event.address);
@@ -60,14 +62,37 @@ export function handleTransferSingle (event: TransferSingleEvent): void {
   //   This function is the only one that emits the TransferBatchEvent
   //   Ignore in if...else, handle separately in handleTransferBatch()
 
+  // Testing conditionals in invalid if statement 
+  if (event.block.number == new BigInt(12129118)) {
+    log.info('Test: 1 - BigInt', []);
+  } 
+  else if (event.block.number.toString() == '12129118') {
+    log.info('Test: 2 - string', []);
+  }
+  else if (event.block.number.toI32() == 12129118) {
+    log.info('Test: 3 - I32', []);
+  }
+  else if (operator == contractDeployer) {
+    log.info('Test: 4 - hex string/"string"', []);
+  }
+  else if (event.params._operator.toString() == contractDeployer) {
+    log.info('Test: 5 - string/"string"', []);
+  }
+  else if (event.params._operator.toString() == contractDeployer_1) {
+    log.info('Test: 6 - string/single quote string', []);
+  }
+  else if (event.params._operator.toString() == contractDeployer_2) {
+    log.info('Test: 7 - string/"string".toString()', []);
+  }
+
   if (quantity == 0 && operator == contractDeployer && event.block.number == new BigInt(12129118)) {
     // Create when contract was deployed, to initialize token for explorers. 0 cards sent.
-    log.info('Create Event for Card {}', [cardId.toString()]);
+    log.info('Log: Create Event for Card {}', [cardId.toString()]);
   }
   else if (quantity == 0 || cardId < 1 || cardId > 30) {
     // Empty or invalid send. No balance change, so ignore. Log for confirmation
-    log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
-    log.info('Debug Info: quantity: {}, op: {}, deployer: {}, block: {}',
+    log.info('Log: Invalid. TransactionId: {}', [event.transaction.hash.toHexString()]);
+    log.info('Log: Invalid. Debug Info: quantity: {}, op: {}, deployer: {}, block: {}',
       [quantity.toString(), operator, contractDeployer, event.block.number.toString()]);
   }
   else if (operator == sentTo && sentFrom == burnAddr) {
@@ -125,7 +150,7 @@ export function handleTransferBatch (event: TransferBatchEvent): void {
     // Check for expected transaction types
     if (quantities[i].toI32() == 0 || cardIds[i].toI32() < 1 || cardIds[i].toI32() > 30) {
       // Empty or invalid send. No balance change, so ignore. Log for confirmation
-      log.info('Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
+      log.info('Log: Invalid transfer. TransactionId: {}', [event.transaction.hash.toHexString()]);
     }
     else if (operator == sentFrom && sentFrom == sentTo) {
       // Holder sent cards to themselves. No change, ignore
